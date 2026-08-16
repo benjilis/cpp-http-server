@@ -33,7 +33,6 @@ int main() {
     // Etape 2 : decrit "ou" le serveur doit ecouter (quelle adresse, quel port)
     sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(defautPort); // htons() convertit le port au format reseau (big-endian)
     serverAddr.sin_addr.s_addr = htonl(INADDR_ANY); // INADDR_ANY = ecoute sur toutes les interfaces reseau de la machine
 
     // Etape 2 (suite) : associe le socket a l'adresse/port decrits ci-dessus
@@ -70,6 +69,9 @@ int main() {
 
     std::cout << "Client connected!" << std::endl;
 
+    // Etape 5 : lit ce que le client a envoye (ex: la requete GET brute de curl/navigateur)
+    // Obligatoire avant de fermer le socket, sinon l'OS envoie un RST (fermeture brutale) au lieu d'un FIN propre
+    // Ici on ne parse rien (ce sera la Phase 2), on vide juste le buffer de reception
     char buffer[4096];
     int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
 
@@ -77,6 +79,8 @@ int main() {
         std::cout << "Received " << bytesReceived << " bytes from client" << std::endl;
     }
 
+    // Etape 6 : envoie une reponse au client sur le socket dedie (clientSocket, jamais serverSocket)
+    // Texte brut pour l'instant, pas encore un format HTTP valide (d'ou l'erreur HTTP/0.9 cote curl/navigateur)
     const char* message = "Hello from C++ server!";
     int sendResult = send(clientSocket, message, strlen(message), 0);
 
@@ -87,6 +91,7 @@ int main() {
         std::cout << "Message sent to client!" << std::endl;
     }
 
+    // Etape 7 : nettoyage - ferme le socket client puis le socket serveur, avant de liberer Winsock
     closesocket(clientSocket);
     closesocket(serverSocket);
 
